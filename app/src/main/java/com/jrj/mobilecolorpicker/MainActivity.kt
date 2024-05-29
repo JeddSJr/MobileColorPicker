@@ -1,8 +1,6 @@
 package com.jrj.mobilecolorpicker
 
-/*import androidx.compose.material3.TextButton
-import androidx.compose.material3.TextField
-import androidx.compose.material3.TopAppBar*/
+
 import android.graphics.Bitmap
 import android.net.Uri
 import android.os.Bundle
@@ -15,7 +13,6 @@ import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts.PickVisualMedia
 import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
@@ -44,7 +41,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onGloballyPositioned
@@ -52,12 +48,9 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.core.graphics.drawable.toBitmap
-import androidx.core.graphics.scale
-import androidx.core.graphics.set
 import coil.compose.AsyncImage
 import coil.compose.AsyncImagePainter
 import com.jrj.mobilecolorpicker.ui.theme.MobileColorPickerTheme
-import kotlin.math.asin
 import kotlin.math.max
 import kotlin.math.min
 
@@ -76,10 +69,11 @@ class MainActivity : ComponentActivity() {
 
 @Preview(showBackground = true)
 @Composable
-fun ColorPickerApp(modifier: Modifier = Modifier){
-    var chosenImageUri by remember {
-        mutableStateOf<Uri?>(null)
-    }
+fun ColorPickerApp(){
+    var chosenImageUri by remember { mutableStateOf<Uri?>(null)    }
+
+    var colorPicked by remember { mutableStateOf(0) }
+
     var galleryLauncher = rememberLauncherForActivityResult(PickVisualMedia()) { uri ->
         if (uri != null){
             Log.d("PhotoPicker", "Selected URI: $uri")
@@ -92,20 +86,18 @@ fun ColorPickerApp(modifier: Modifier = Modifier){
         modifier = Modifier.fillMaxSize(),
         color = Color.Transparent
     ) {
-        Column {
+        Column(modifier = Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally) {
             TopBar(galleryLauncher = galleryLauncher)
-            Spacer(modifier.size(30.dp))
-            Box {
-                ImageDisplayZone(modifier = Modifier, galleryLauncher = galleryLauncher,imageUri=chosenImageUri)
-                //PickerBox()
-            }
+            colorPicked = ImageDisplayZone(modifier = Modifier, galleryLauncher = galleryLauncher,imageUri=chosenImageUri)
+
+            PickerBox(color = colorPicked)
         }
     }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun TopBar(modifier: Modifier = Modifier,galleryLauncher: ActivityResultLauncher<PickVisualMediaRequest>?){
+fun TopBar(galleryLauncher: ActivityResultLauncher<PickVisualMediaRequest>?){
     CenterAlignedTopAppBar(
         title = {
             Text(
@@ -131,14 +123,13 @@ fun TopBar(modifier: Modifier = Modifier,galleryLauncher: ActivityResultLauncher
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun ImageDisplayZone(modifier: Modifier = Modifier, galleryLauncher: ActivityResultLauncher<PickVisualMediaRequest>?, imageUri: Uri?) {
-    var colorPicked by remember { mutableStateOf(0) }
+fun ImageDisplayZone(modifier: Modifier = Modifier, galleryLauncher: ActivityResultLauncher<PickVisualMediaRequest>?, imageUri: Uri?): Int {
     var imgBitmap by remember { mutableStateOf(Bitmap.createBitmap(1,1,Bitmap.Config.RGBA_F16)) }
-
+    var colorPicked by remember { mutableStateOf(0) }
     var scale by remember { mutableStateOf(1f) } //Reset those values when picking an image
     var translationOffset by remember { mutableStateOf(Offset.Zero) }
     var imgSize by remember { mutableStateOf(IntSize.Zero) }
-    val state = rememberTransformableState { zoomChange, offsetChange, rotationChange ->
+    val state = rememberTransformableState { zoomChange, offsetChange, _ ->
         scale *= zoomChange
         translationOffset += offsetChange
     }
@@ -149,11 +140,10 @@ fun ImageDisplayZone(modifier: Modifier = Modifier, galleryLauncher: ActivityRes
     }
 
     Column(
-        modifier = Modifier.fillMaxSize(),
+        //modifier = Modifier.fillMaxSize(),
         horizontalAlignment = Alignment.CenterHorizontally)
     {
         if (imageUri != null){
-
             Box (
                 contentAlignment = Alignment.Center,
                 modifier = Modifier
@@ -223,13 +213,13 @@ fun ImageDisplayZone(modifier: Modifier = Modifier, galleryLauncher: ActivityRes
                                 },
                                 onTap = { tapOffset: Offset ->
                                     var bitmapOffset = tapOffset.copy()
-                                    colorPicked = getColorOnPixel(bitmapOffset,imgBitmap)
+                                    colorPicked = getColorOnPixel(bitmapOffset, imgBitmap)
                                 },
-                                ) },
+                            )
+                        },
                     model = imageUri,
                     contentDescription = "Image chosen in the gallery",
                 )
-                PickerBox(colorPicked,imgBitmap)
             }
         }
         else{
@@ -252,18 +242,17 @@ fun ImageDisplayZone(modifier: Modifier = Modifier, galleryLauncher: ActivityRes
             }
         }
     }
+    return colorPicked
 }
 
 @Composable
-fun PickerBox(color: Int,imgBitmap: Bitmap){
-    //Image(bitmap = imgBitmap.asImageBitmap(), contentDescription = "")
-    Box (
-        modifier = Modifier
-            .size(100.dp)
-            .background(
-                color = Color(color)
-            )
-    )
+fun PickerBox(color: Int){
+    Row(modifier = Modifier
+        .fillMaxSize()
+        .background(color= Color(color))
+    ){
+        Text(text = "Hello")
+    }
 }
 
 fun getColorOnPixel(bitmapOffset: Offset,imageBitmap: Bitmap): Int {
